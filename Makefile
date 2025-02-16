@@ -14,7 +14,7 @@ MLX_INC = $(MLX_DIR)
 LIBS = -L$(MLX_DIR) -lmlx -framework OpenGL -framework AppKit
 
 # Source files
-SRC = main.c points.c util.c
+SRC = main.c map_init.c points.c my_strtol.c helpers_free.c draw.c draw_helpers.c split.c
 GNL_SRC = GNL/get_next_line.c GNL/get_next_line_utils.c
 OBJ = $(SRC:.c=.o) $(GNL_SRC:.c=.o)
 

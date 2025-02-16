@@ -1,94 +1,65 @@
 #include "fdf.h"
 
-
-int ft_len_of_map(int fd)
+void	set_point(t_map *map, int x, int y, int z_val, int color)
 {
-	int len = 0;
-	char *line;
-	int i;
+	int	point_index;
 
-	line = get_next_line(fd);
-	while (line)
-	{
-		i = 0;
-		while (line[i])
-		{
-			while (line[i] == ' ')
-				i++;
-
-			if (line[i] && line[i] != ' ')
-			{
-				len++; // Count a point
-				while (line[i] && line[i] != ' ')
-					i++;
-			}
-		}
-		free(line);
-		line = get_next_line(fd);
-	}
-	return (len);
+	point_index = y * map->width + x;
+	map->points[point_index] = (t_point){x, y, z_val, color, 0, 0};
+	if (z_val < map->z_min)
+		map->z_min = z_val;
+	if (z_val > map->z_max)
+		map->z_max = z_val;
 }
 
-void add_points_1(t_map *newmap, int fd)
+void	process_line(t_map *newmap, char **s_line, int y)
 {
-	char	*line;
-	char	**s_line;
-	int		y = 0;
 	int		index;
-	int		point_index;
+	int		z_val;
+	int		actual_color;
+	char	**colored_line;
 
-	line = get_next_line(fd);
-	while (line)
+	index = 0;
+	actual_color = newmap->color;
+	while (s_line[index] && index < newmap->width)
 	{
-		s_line = ft_split(line, ' ');
-		if (!s_line)
+		colored_line = NULL;
+		z_val = atoi(s_line[index]);
+		if (color_check(s_line[index]))
 		{
-			free(line);
-			break;
+			colored_line = ft_split_1(s_line[index], ',');
+			z_val = atoi(colored_line[0]);
+			actual_color = my_strtol(colored_line[1]);
+			free_spl(colored_line);
 		}
-
-		index = 0;
-		while (s_line[index])
-		{
-			point_index = y * newmap->width + index; // Correct indexing
-			newmap->points[point_index].x = index;
-			newmap->points[point_index].y = y;
-			newmap->points[point_index].z = atoi(s_line[index]);
-			index++;
-		}
-
-		// Free memory
-		free(line);
-
-		// Read next line
-		y++;
-		line = get_next_line(fd);
+		set_point(newmap, index, y, z_val, actual_color);
+		index++;
 	}
 }
 
-// int main()
-// {
-// 	int		fd;
-// 	int		len;
-// 	t_map	newmap;
-// 	newmap.width = 19;
-// 	newmap.height = 11;
-// 	newmap.points = malloc(sizeof(t_point) * 209);
 
-// 	fd = open("maps/test_maps/42.fdf", O_RDONLY);
-// 	if (fd == -1)
-// 	{
-// 		perror("Error opening file");
-// 		return (1);
-// 	}
-// 	add_points(&newmap,fd);
-// 	int i;
-// 	i = 0;
-// 	while (i < 209)
-// 	{
-// 		printf("z = %d \n",newmap.points[i].z);
-// 		i++;
-// 	}
-	
-	
-// }
+int add_points(t_map *newmap, const char *dest)
+{
+    char *line;
+    char **s_line;
+    int y = 0;
+    int fd = open(dest, O_RDONLY);
+    if (fd == -1) return (0);
+
+    newmap->z_min = 999999;
+    newmap->z_max = -999999;
+
+    while ((line = get_next_line(fd)))
+    {
+        s_line = ft_split_1(line, ' ');
+        free(line);
+        if (!s_line)
+			return (close(fd), 0);
+
+        process_line(newmap, s_line, y);
+        free_spl(s_line);
+        y++;
+    }
+    close(fd);
+    return (1);
+}
